@@ -9,7 +9,6 @@ model_path = '/Users/AdvikaKumar/Developer/focus_agent/v2/posture_detection/pose
 
 NUM_LANDMARKS = 17
 
-
 def init_pose_landmarker(callback, model_path=model_path):
     options = PoseLandmarkerOptions(
         base_options=BaseOptions(model_asset_path=model_path),
@@ -17,7 +16,6 @@ def init_pose_landmarker(callback, model_path=model_path):
         result_callback=callback
     )
     return PoseLandmarker.create_from_options(options)
-
 
 def extract_landmarks(result):
     if not result.pose_landmarks:

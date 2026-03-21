@@ -1,15 +1,3 @@
-#!/usr/bin/env python3
-"""
-Posture angle data collector.
-
-Run from the project root:
-    python -m posture_detection.collect_data
-
-Controls (only saved when all three angles are visible):
-    G  –  label current frame as GOOD posture
-    B  –  label current frame as BAD posture
-    Q  –  quit and print per-label statistics
-"""
 import csv
 import math
 import os
@@ -19,12 +7,10 @@ import time
 import cv2
 import mediapipe as mp
 
-# ── Paths ────────────────────────────────────────────────────────────────────
 _DIR = os.path.dirname(__file__)
 MODEL_PATH = os.path.join(_DIR, "pose_landmarker_full.task")
 OUTPUT_CSV = os.path.join(_DIR, "posture_data.csv")
 
-# ── MediaPipe (IMAGE mode = synchronous, no callback needed) ─────────────────
 BaseOptions = mp.tasks.BaseOptions
 PoseLandmarker = mp.tasks.vision.PoseLandmarker
 PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
@@ -37,7 +23,6 @@ landmarker = PoseLandmarker.create_from_options(
     )
 )
 
-# ── Landmark indices ──────────────────────────────────────────────────────────
 NOSE = 0
 LEFT_EAR = 7
 RIGHT_EAR = 8
@@ -48,8 +33,6 @@ MIN_VIS = 0.5
 
 SKELETON_CONNECTIONS = [(11, 13), (13, 15), (12, 14), (14, 16), (11, 12)]
 
-
-# ── Core helpers ──────────────────────────────────────────────────────────────
 def _extract(result):
     if not result.pose_landmarks:
         return None
@@ -60,12 +43,7 @@ def _extract(result):
         row += [lm.x, lm.y, lm.z, lm.visibility]
     return row
 
-
 def compute_angles(lms):
-    """
-    Returns (shoulder_angle, head_angle, neck_angle) in degrees.
-    Any value is None if the required landmarks aren't visible.
-    """
     g = [lms[i * 4:(i + 1) * 4] for i in range(NUM_LANDMARKS)]
 
     def horiz(x1, y1, x2, y2):
@@ -87,13 +65,12 @@ def compute_angles(lms):
             and g[RIGHT_SHOULDER][3] > MIN_VIS):
         mid_x = (g[LEFT_SHOULDER][0] + g[RIGHT_SHOULDER][0]) / 2
         mid_y = (g[LEFT_SHOULDER][1] + g[RIGHT_SHOULDER][1]) / 2
-        vert = mid_y - g[NOSE][1]     # positive = nose above shoulders
+        vert = mid_y - g[NOSE][1] 
         horiz_dist = abs(g[NOSE][0] - mid_x)
         if vert > 0:
             nk = math.degrees(math.atan2(horiz_dist, vert))
 
     return sh, hd, nk
-
 
 def draw_skeleton(frame, lms):
     h, w = frame.shape[:2]
@@ -112,18 +89,14 @@ def put(frame, text, y, color=(255, 255, 255), scale=0.55, bold=False):
                 cv2.FONT_HERSHEY_SIMPLEX, scale, color,
                 2 if bold else 1, cv2.LINE_AA)
 
-
-# ── CSV ───────────────────────────────────────────────────────────────────────
 csv_file = open(OUTPUT_CSV, "a", newline="")
 writer = csv.writer(csv_file)
 if os.path.getsize(OUTPUT_CSV) == 0:
     writer.writerow(["timestamp", "shoulder_deg", "head_deg", "neck_deg", "label"])
 
-# ── Summary printer ───────────────────────────────────────────────────────────
 def print_summary():
     data = {"good": {"sh": [], "hd": [], "nk": []},
             "bad":  {"sh": [], "hd": [], "nk": []}}
-
     try:
         with open(OUTPUT_CSV, newline="") as f:
             for row in csv.DictReader(f):
@@ -154,13 +127,12 @@ def print_summary():
     print("=" * 62)
     print(f"{'':20s}  {'GOOD':>28s}  {'BAD':>28s}")
     print("-" * 62)
-    for label, key in [("Shoulder tilt", "sh"), ("Head tilt", "hd"), ("Neck lean", "nk")]:
+    for label, key in [("shoulder tilt", "sh"), ("head tilt", "hd"), ("neck lean", "nk")]:
         print(f"{label:20s}{stats(data['good'][key])}")
         print(f"{'':20s}{stats(data['bad'][key])}")
         print()
 
-    # Suggest thresholds: midpoint between good p95 and bad mean
-    print("Suggested MAX angle values (where probability → 1.0):")
+    print("max angle values:")
     suggestions = {}
     for var, key, cur in [("MAX_SHOULDER_ANGLE", "sh", 25.0),
                            ("MAX_HEAD_ANGLE",     "hd", 25.0),
@@ -174,15 +146,12 @@ def print_summary():
         suggestions[var] = suggested
         print(f"  {var} = {suggested}")
 
-    print()
-    print("Copy these into posture_detection.py to tune your thresholds.")
-    print("=" * 62)
+    print("\nthresholds for posture_detection.py.")
 
 
-# ── Main loop ─────────────────────────────────────────────────────────────────
 cap = cv2.VideoCapture(0)
 counts = {"good": 0, "bad": 0}
-flash = None   # (label, expiry_time)
+flash = None 
 
 print(f"Output: {OUTPUT_CSV}")
 print("G = good posture  |  B = bad posture  |  Q = quit")
@@ -204,7 +173,6 @@ while True:
         sh, hd, nk = compute_angles(lms)
         all_visible = all(v is not None for v in (sh, hd, nk))
 
-    # ── HUD ──────────────────────────────────────────────────────────────────
     put(frame, "POSTURE DATA COLLECTOR", 22, (0, 220, 220), scale=0.65, bold=True)
 
     y = 50
@@ -219,7 +187,7 @@ while True:
 
     y += 6
     status_col = (120, 255, 120) if all_visible else (80, 80, 255)
-    status_txt = "Landmarks OK – ready to label" if all_visible else "Waiting for landmarks..."
+    status_txt = "Landmarks OK - ready to label" if all_visible else "Waiting for landmarks..."
     put(frame, status_txt, y, status_col)
 
     y += 20

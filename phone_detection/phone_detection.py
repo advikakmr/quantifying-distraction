@@ -1,23 +1,20 @@
 import cv2
 from collections import deque
 from ultralytics import YOLO
-from config import *
 
 MODEL_PATH = "phone_detection/yolo11s.pt"
 TARGET_CLASSES = {"remote", "cell phone"}
 CONF_THRESHOLD = 0.4
 MIN_BOX_AREA_RATIO = 0.01
 
-# Require phone detected in at least SMOOTHING_MIN of the last SMOOTHING_FRAMES
-# frames before reporting a detection (eliminates single-frame false positives).
 SMOOTHING_FRAMES = 5
 SMOOTHING_MIN_DETECTIONS = 3
 
 model = YOLO(MODEL_PATH)
 wanted_ids = {i for i, n in model.names.items() if n in TARGET_CLASSES}
 
-latest_detected = 0     # int: 100 = phone detected, 0 = not detected
-latest_annotated = None  # YOLO-annotated frame
+latest_detected = 0   
+latest_annotated = None 
 _detection_buffer: deque = deque(maxlen=SMOOTHING_FRAMES)
 
 
@@ -35,7 +32,6 @@ def _phone_present(results, frame_area: float) -> bool:
             if box_area / frame_area >= MIN_BOX_AREA_RATIO:
                 return True
     return False
-
 
 def detect_phone(frame):
     global latest_detected, latest_annotated
@@ -59,7 +55,6 @@ def detect_phone(frame):
     latest_annotated = annotated
     _detection_buffer.append(1 if _phone_present(results, float(H * W)) else 0)
     latest_detected = 1 if sum(_detection_buffer) >= SMOOTHING_MIN_DETECTIONS else 0
-
 
 def draw_phone_detection(frame):
     out = latest_annotated if latest_annotated is not None else frame
