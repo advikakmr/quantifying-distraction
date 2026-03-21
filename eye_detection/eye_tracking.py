@@ -4,7 +4,7 @@ import threading
 import time
 import collections
 import statistics
-from eye_tracking.utils import (
+from eye_detection.utils import (
     init_face_landmarker, eye_aspect_ratio, gaze_ratio,
     LEFT_EYE, RIGHT_EYE,
     LEFT_IRIS_CENTER, RIGHT_IRIS_CENTER,

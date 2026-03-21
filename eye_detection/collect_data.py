@@ -24,7 +24,7 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
-from eye_tracking.utils import (
+from eye_detection.utils import (
     eye_aspect_ratio, gaze_ratio,
     LEFT_EYE, RIGHT_EYE,
     LEFT_IRIS_CENTER, RIGHT_IRIS_CENTER,
